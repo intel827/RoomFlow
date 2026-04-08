@@ -34,6 +34,12 @@ router.post('/', authenticate, requireAdmin, (req, res) => {
 
 router.delete('/:id', authenticate, requireAdmin, (req, res) => {
   const id = parseInt(req.params.id as string);
+  const force = req.query.force === 'true';
+
+  if (!force && roomService.hasFutureReservations(id)) {
+    throw new AppError(409, 'HAS_FUTURE_RESERVATIONS', '해당 회의실에 예정된 예약이 존재합니다.');
+  }
+
   const deleted = roomService.deleteRoom(id);
   if (!deleted) {
     throw new AppError(404, 'NOT_FOUND', '회의실을 찾을 수 없습니다.');

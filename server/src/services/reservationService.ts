@@ -18,6 +18,10 @@ const checkOverlap = (roomId: number, startTime: string, endTime: string, exclud
 
 export const createReservation = db.transaction(
   (roomId: number, userId: number, title: string, startTime: string, endTime: string) => {
+    if (new Date(startTime) < new Date()) {
+      throw new AppError(400, 'PAST_TIME', '현재 시각 이전으로는 예약할 수 없습니다.');
+    }
+
     const conflict = checkOverlap(roomId, startTime, endTime);
     if (conflict) {
       throw new AppError(409, 'DUPLICATE_BOOKING', '해당 시간에 이미 예약이 존재합니다.');

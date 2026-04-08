@@ -36,6 +36,13 @@ export const createRoom = (name: string, capacity: number, location: string | nu
   return db.prepare('SELECT * FROM rooms WHERE id = ?').get(result.lastInsertRowid) as Room;
 };
 
+export const hasFutureReservations = (id: number): boolean => {
+  const row = db.prepare(
+    "SELECT 1 FROM reservations WHERE room_id = ? AND status = 'active' AND end_time > datetime('now') LIMIT 1"
+  ).get(id);
+  return !!row;
+};
+
 export const deleteRoom = (id: number): boolean => {
   const result = db.prepare('DELETE FROM rooms WHERE id = ?').run(id);
   return result.changes > 0;

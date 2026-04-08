@@ -40,9 +40,15 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const start_time = new Date(`${date}T${startTime}:00`).toISOString();
-    const end_time = new Date(`${date}T${endTime}:00`).toISOString();
-    onSubmit({ title, start_time, end_time });
+    const start = new Date(`${date}T${startTime}:00`);
+    const end = new Date(`${date}T${endTime}:00`);
+
+    if (start < new Date()) {
+      alert('현재 시각 이전으로는 예약할 수 없습니다.');
+      return;
+    }
+
+    onSubmit({ title, start_time: start.toISOString(), end_time: end.toISOString() });
   };
 
   return (

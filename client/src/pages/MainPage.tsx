@@ -98,13 +98,24 @@ export default function MainPage() {
         label: '회의실 삭제',
         danger: true,
         onClick: async () => {
-          if (confirm(`"${room.name}" 회의실을 삭제하시겠습니까?`)) {
-            try {
-              await api.delete(`/rooms/${room.id}`);
-              setToast({ message: '회의실이 삭제되었습니다.', type: 'success' });
-              // Trigger refetch by invalidating
-              window.location.reload();
-            } catch {
+          if (!confirm(`"${room.name}" 회의실을 삭제하시겠습니까?`)) return;
+
+          try {
+            await api.delete(`/rooms/${room.id}`);
+            setToast({ message: '회의실이 삭제되었습니다.', type: 'success' });
+            window.location.reload();
+          } catch (err: any) {
+            if (err.response?.data?.code === 'HAS_FUTURE_RESERVATIONS') {
+              if (confirm(`"${room.name}" 회의실에 예정된 예약이 존재합니다. 그래도 삭제하시겠습니까?`)) {
+                try {
+                  await api.delete(`/rooms/${room.id}?force=true`);
+                  setToast({ message: '회의실이 삭제되었습니다.', type: 'success' });
+                  window.location.reload();
+                } catch {
+                  setToast({ message: '회의실 삭제에 실패했습니다.', type: 'error' });
+                }
+              }
+            } else {
               setToast({ message: '회의실 삭제에 실패했습니다.', type: 'error' });
             }
           }
