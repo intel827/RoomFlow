@@ -147,7 +147,23 @@ export default function RoomDetailPage() {
         className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 cursor-context-menu select-none"
         onContextMenu={handleRoomContextMenu}
       >
-        <h2 className="text-xl font-semibold text-gray-900">{room.name}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">{room.name}</h2>
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+              room.current_status === 'occupied'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-green-100 text-green-700'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                room.current_status === 'occupied' ? 'bg-red-500' : 'bg-green-500'
+              }`}
+            />
+            {room.current_status === 'occupied' ? '사용중' : '사용 가능'}
+          </span>
+        </div>
         <div className="mt-2 text-sm text-gray-500 space-y-1">
           <p>수용 인원: {room.capacity}명</p>
           {room.location && <p>위치: {room.location}</p>}
