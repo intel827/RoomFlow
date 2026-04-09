@@ -20,7 +20,7 @@ const ALL_TIME_SLOTS = (() => {
   return slots;
 })();
 
-const getAvailableTimeSlots = (selectedDate: string) => {
+const getAvailableTimeSlots = (selectedDate: string, preserveSlots?: string[]) => {
   const today = format(new Date(), 'yyyy-MM-dd');
   if (selectedDate !== today) return ALL_TIME_SLOTS;
 
@@ -30,18 +30,31 @@ const getAvailableTimeSlots = (selectedDate: string) => {
   const nextSlotMinutes = Math.ceil(currentMinutes / 30) * 30;
 
   return ALL_TIME_SLOTS.filter((slot) => {
+    if (preserveSlots?.includes(slot)) return true;
     const [h, m] = slot.split(':').map(Number);
     return h * 60 + m >= nextSlotMinutes;
   });
 };
 
 export default function ReservationForm({ roomId: _roomId, roomName, reservation, onSubmit, onClose }: Props) {
+  const [initialized, setInitialized] = useState(!reservation);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('09:30');
 
-  const availableSlots = getAvailableTimeSlots(date);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  const preserveSlots = reservation
+    ? [format(new Date(reservation.start_time), 'HH:mm'), format(new Date(reservation.end_time), 'HH:mm')]
+    : undefined;
+  const availableSlots = getAvailableTimeSlots(date, preserveSlots);
 
   useEffect(() => {
     if (reservation) {
@@ -51,11 +64,13 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
       setDate(format(start, 'yyyy-MM-dd'));
       setStartTime(format(start, 'HH:mm'));
       setEndTime(format(end, 'HH:mm'));
+      setInitialized(true);
     }
   }, [reservation]);
 
   // 날짜 변경 시 선택된 시간이 가용 슬롯에 없으면 첫 번째 슬롯으로 리셋
   useEffect(() => {
+    if (!initialized) return;
     if (availableSlots.length === 0) return;
     if (!availableSlots.includes(startTime)) {
       setStartTime(availableSlots[0]);
@@ -64,7 +79,7 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
       const startIdx = availableSlots.indexOf(startTime);
       setEndTime(availableSlots[Math.min(startIdx + 1, availableSlots.length - 1)]);
     }
-  }, [date, availableSlots, startTime, endTime]);
+  }, [date, availableSlots, startTime, endTime, initialized]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +96,17 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h2 className="text-lg font-semibold mb-4">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md relative">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 className="text-lg font-semibold mb-4 pr-8">
           {reservation ? '예약 수정' : '새 예약'} - {roomName}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -135,14 +159,7 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
               </select>
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-            >
-              취소
-            </button>
+          <div className="flex justify-end pt-2">
             <button
               type="submit"
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"

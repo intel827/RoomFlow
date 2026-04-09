@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -24,10 +24,20 @@ export default function RoomDetailPage() {
   const createReservation = useCreateReservation();
 
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+  const [showRoomInfo, setShowRoomInfo] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [reservationForm, setReservationForm] = useState(false);
+
+  useEffect(() => {
+    if (!showRoomInfo) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowRoomInfo(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showRoomInfo]);
 
   const handleRoomContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -144,7 +154,8 @@ export default function RoomDetailPage() {
       </button>
 
       <div
-        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 cursor-context-menu select-none"
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 cursor-pointer hover:shadow-md transition-shadow select-none"
+        onClick={() => setShowRoomInfo(true)}
         onContextMenu={handleRoomContextMenu}
       >
         <div className="flex items-center justify-between">
@@ -168,7 +179,7 @@ export default function RoomDetailPage() {
           <p>수용 인원: {room.capacity}명</p>
           {room.location && <p>위치: {room.location}</p>}
         </div>
-        <p className="mt-2 text-xs text-gray-400">우클릭으로 메뉴를 열 수 있습니다</p>
+        <p className="mt-2 text-xs text-gray-400">클릭하여 상세 정보 · 우클릭으로 메뉴</p>
       </div>
 
       <h3 className="text-lg font-semibold text-gray-900 mb-4">예약 목록</h3>
@@ -180,9 +191,10 @@ export default function RoomDetailPage() {
           {room.reservations.map((rv) => (
             <div
               key={rv.id}
+              onClick={() => rv.status === 'active' && rv.user_id === user?.id && setEditingReservation(rv)}
               className={`bg-white rounded-lg border p-4 ${
                 rv.status === 'cancelled' ? 'border-red-200 bg-red-50' : 'border-gray-200'
-              }`}
+              } ${rv.status === 'active' && rv.user_id === user?.id ? 'cursor-pointer hover:border-blue-300 hover:border-2' : ''}`}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -202,29 +214,38 @@ export default function RoomDetailPage() {
                   )}
                 </div>
                 {rv.status === 'active' && (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-0.5">
                     {rv.user_id === user?.id && (
                       <>
                         <button
-                          onClick={() => setEditingReservation(rv)}
-                          className="text-xs text-blue-600 hover:text-blue-800"
+                          onClick={(e) => { e.stopPropagation(); setEditingReservation(rv); }}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
+                          title="수정"
                         >
-                          수정
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                          </svg>
                         </button>
                         <button
-                          onClick={() => handleDelete(rv.id)}
-                          className="text-xs text-red-600 hover:text-red-800"
+                          onClick={(e) => { e.stopPropagation(); handleDelete(rv.id); }}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
+                          title="삭제"
                         >
-                          삭제
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                          </svg>
                         </button>
                       </>
                     )}
                     {isAdmin && rv.user_id !== user?.id && (
                       <button
-                        onClick={() => setCancellingId(rv.id)}
-                        className="text-xs text-red-600 hover:text-red-800"
+                        onClick={(e) => { e.stopPropagation(); setCancellingId(rv.id); }}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
+                        title="강제 취소"
                       >
-                        강제 취소
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
                       </button>
                     )}
                   </div>
@@ -269,6 +290,76 @@ export default function RoomDetailPage() {
           onClose={() => setCancellingId(null)}
         />
       )}
+
+      {showRoomInfo && (() => {
+        const now = new Date();
+        const currentMeeting = room.reservations.find(
+          (rv) => rv.status === 'active' && new Date(rv.start_time) <= now && new Date(rv.end_time) > now
+        );
+        const nextMeeting = room.reservations.find(
+          (rv) => rv.status === 'active' && new Date(rv.start_time) > now
+        );
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowRoomInfo(false)}>
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md relative" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setShowRoomInfo(false)}
+                className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="flex items-center gap-3 mb-4 pr-8">
+                <h2 className="text-lg font-semibold text-gray-900">{room.name}</h2>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+                    room.current_status === 'occupied' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${room.current_status === 'occupied' ? 'bg-red-500' : 'bg-green-500'}`} />
+                  {room.current_status === 'occupied' ? '사용중' : '사용 가능'}
+                </span>
+              </div>
+
+              <div className="text-sm text-gray-600 space-y-1 mb-4">
+                <p>수용 인원: {room.capacity}명</p>
+                {room.location && <p>위치: {room.location}</p>}
+              </div>
+
+              <hr className="mb-4" />
+
+              {currentMeeting ? (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-3">
+                  <p className="text-sm font-medium text-red-800">현재 진행 중인 회의</p>
+                  <p className="text-sm text-red-700 mt-1">{currentMeeting.title}</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    {format(new Date(currentMeeting.start_time), 'HH:mm')} ~ {format(new Date(currentMeeting.end_time), 'HH:mm')}
+                  </p>
+                  <p className="text-xs text-red-500 mt-1">
+                    예약자: {currentMeeting.user_name} ({currentMeeting.employee_id})
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-md p-3 mb-3">
+                  <p className="text-sm font-medium text-green-800">현재 사용 가능합니다</p>
+                </div>
+              )}
+
+              {nextMeeting && (
+                <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mb-3">
+                  <p className="text-sm font-medium text-gray-700">다음 예약</p>
+                  <p className="text-sm text-gray-600 mt-1">{nextMeeting.title}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {format(new Date(nextMeeting.start_time), 'M월 d일 HH:mm', { locale: ko })} ~ {format(new Date(nextMeeting.end_time), 'HH:mm')}
+                  </p>
+                </div>
+              )}
+
+            </div>
+          </div>
+        );
+      })()}
 
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
