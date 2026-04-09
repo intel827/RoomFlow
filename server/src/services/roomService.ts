@@ -7,7 +7,7 @@ export const getAllRooms = (): RoomWithStatus[] => {
       CASE WHEN EXISTS (
         SELECT 1 FROM reservations rv
         WHERE rv.room_id = r.id AND rv.status = 'active'
-          AND rv.start_time <= datetime('now') AND rv.end_time > datetime('now')
+          AND datetime(rv.start_time) <= datetime('now') AND datetime(rv.end_time) > datetime('now')
       ) THEN 'occupied' ELSE 'available' END AS current_status
     FROM rooms r
     ORDER BY r.name
@@ -15,14 +15,22 @@ export const getAllRooms = (): RoomWithStatus[] => {
 };
 
 export const getRoomById = (id: number) => {
-  const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(id) as Room | undefined;
+  const room = db.prepare(`
+    SELECT r.*,
+      CASE WHEN EXISTS (
+        SELECT 1 FROM reservations rv
+        WHERE rv.room_id = r.id AND rv.status = 'active'
+          AND datetime(rv.start_time) <= datetime('now') AND datetime(rv.end_time) > datetime('now')
+      ) THEN 'occupied' ELSE 'available' END AS current_status
+    FROM rooms r WHERE r.id = ?
+  `).get(id) as (Room & { current_status: string }) | undefined;
   if (!room) return null;
 
   const reservations = db.prepare(`
     SELECT rv.*, u.name AS user_name, u.employee_id
     FROM reservations rv
     JOIN users u ON u.id = rv.user_id
-    WHERE rv.room_id = ? AND rv.end_time > datetime('now')
+    WHERE rv.room_id = ? AND datetime(rv.end_time) > datetime('now')
     ORDER BY rv.start_time
   `).all(id);
 
@@ -38,7 +46,7 @@ export const createRoom = (name: string, capacity: number, location: string | nu
 
 export const hasFutureReservations = (id: number): boolean => {
   const row = db.prepare(
-    "SELECT 1 FROM reservations WHERE room_id = ? AND status = 'active' AND end_time > datetime('now') LIMIT 1"
+    "SELECT 1 FROM reservations WHERE room_id = ? AND status = 'active' AND datetime(end_time) > datetime('now') LIMIT 1"
   ).get(id);
   return !!row;
 };

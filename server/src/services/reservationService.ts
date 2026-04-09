@@ -6,7 +6,7 @@ const checkOverlap = (roomId: number, startTime: string, endTime: string, exclud
   const sql = `
     SELECT id FROM reservations
     WHERE room_id = ? AND status = 'active'
-      AND start_time < ? AND end_time > ?
+      AND datetime(start_time) < datetime(?) AND datetime(end_time) > datetime(?)
       ${excludeId ? 'AND id != ?' : ''}
   `;
   const params = excludeId
