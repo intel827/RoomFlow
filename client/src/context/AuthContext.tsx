@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   login: (employeeId: string) => Promise<void>;
+  loginWithOAuth: (code: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -26,6 +27,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   }, []);
 
+  const loginWithOAuth = useCallback(async (code: string) => {
+    const { data } = await api.post<{ token: string; user: User }>('/auth/hiworks/callback', { code });
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setUser(data.user);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -33,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin: user?.role === 'admin', login, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin: user?.role === 'admin', login, loginWithOAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

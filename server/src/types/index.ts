@@ -3,7 +3,24 @@ export interface User {
   employee_id: string;
   name: string;
   role: 'user' | 'admin';
+  auth_provider: 'local' | 'hiworks';
+  hiworks_user_no: string | null;
+  email: string | null;
   created_at: string;
+}
+
+export interface HiworksTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface HiworksUserInfo {
+  user_no: string;
+  name: string;
+  email: string;
+  id: string;
 }
 
 export interface Room {

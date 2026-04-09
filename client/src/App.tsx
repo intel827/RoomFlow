@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import MainPage from './pages/MainPage';
 import RoomDetailPage from './pages/RoomDetailPage';
 
@@ -30,6 +31,7 @@ function AppRoutes() {
         path="/login"
         element={user ? <Navigate to="/" replace /> : <LoginPage />}
       />
+      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
       <Route
         element={
           <ProtectedRoute>

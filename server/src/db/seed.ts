@@ -8,12 +8,12 @@ const seedData = () => {
 
   // Seed users
   const insertUser = db.prepare(
-    'INSERT INTO users (employee_id, name, role) VALUES (?, ?, ?)'
+    'INSERT INTO users (employee_id, name, role, auth_provider) VALUES (?, ?, ?, ?)'
   );
-  insertUser.run('ADMIN001', '관리자', 'admin');
-  insertUser.run('EMP001', '김철수', 'user');
-  insertUser.run('EMP002', '이영희', 'user');
-  insertUser.run('EMP003', '박민수', 'user');
+  insertUser.run('ADMIN001', '관리자', 'admin', 'local');
+  insertUser.run('EMP001', '김철수', 'user', 'local');
+  insertUser.run('EMP002', '이영희', 'user', 'local');
+  insertUser.run('EMP003', '박민수', 'user', 'local');
 
   // Seed rooms
   const insertRoom = db.prepare(

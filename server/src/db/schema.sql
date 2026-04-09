@@ -1,9 +1,12 @@
 CREATE TABLE IF NOT EXISTS users (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  employee_id TEXT    NOT NULL UNIQUE,
-  name        TEXT    NOT NULL,
-  role        TEXT    NOT NULL DEFAULT 'user' CHECK(role IN ('user', 'admin')),
-  created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  employee_id     TEXT    NOT NULL UNIQUE,
+  name            TEXT    NOT NULL,
+  role            TEXT    NOT NULL DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+  auth_provider   TEXT    NOT NULL DEFAULT 'local' CHECK(auth_provider IN ('local', 'hiworks')),
+  hiworks_user_no TEXT    UNIQUE,
+  email           TEXT,
+  created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
