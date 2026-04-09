@@ -34,7 +34,7 @@ const updateSchema = z.object({
 }, '예약 시간은 최소 30분이며 30분 단위여야 합니다.');
 
 const cancelSchema = z.object({
-  reason: z.string().min(1, '취소 사유를 입력해주세요.'),
+  reason: z.string().min(1, '취소 사유를 입력해주세요.').max(200, '취소 사유는 200자 이내로 입력해주세요.'),
 });
 
 router.post('/', authenticate, (req, res) => {

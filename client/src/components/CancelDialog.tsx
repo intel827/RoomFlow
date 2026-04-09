@@ -29,12 +29,18 @@ export default function CancelDialog({ onConfirm, onClose }: Props) {
         </button>
         <h2 className="text-lg font-semibold mb-4 text-red-600">예약 강제 취소</h2>
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">취소 사유 (필수)</label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-sm font-medium text-gray-700">취소 사유 (필수)</label>
+            <span className={`text-xs ${reason.length >= 200 ? 'text-red-500' : 'text-gray-400'}`}>
+              {reason.length}/200
+            </span>
+          </div>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             required
             rows={3}
+            maxLength={200}
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             placeholder="취소 사유를 입력하세요"
           />

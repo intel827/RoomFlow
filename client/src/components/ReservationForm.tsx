@@ -111,12 +111,18 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">회의 제목</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-medium text-gray-700">회의 제목</label>
+              <span className={`text-xs ${title.length >= 100 ? 'text-red-500' : 'text-gray-400'}`}>
+                {title.length}/100
+              </span>
+            </div>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              maxLength={100}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="회의 제목을 입력하세요"
             />

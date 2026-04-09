@@ -21,11 +21,11 @@ CREATE TABLE IF NOT EXISTS reservations (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   room_id       INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
   user_id       INTEGER NOT NULL REFERENCES users(id),
-  title         TEXT    NOT NULL,
+  title         TEXT    NOT NULL CHECK(length(title) <= 100),
   start_time    TEXT    NOT NULL,
   end_time      TEXT    NOT NULL,
   status        TEXT    NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'cancelled')),
-  cancel_reason TEXT,
+  cancel_reason TEXT    CHECK(cancel_reason IS NULL OR length(cancel_reason) <= 200),
   cancelled_by  INTEGER REFERENCES users(id),
   created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
