@@ -24,6 +24,7 @@ export default function RoomDetailPage() {
   const createReservation = useCreateReservation();
 
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+  const [viewingReservation, setViewingReservation] = useState<Reservation | null>(null);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -31,13 +32,16 @@ export default function RoomDetailPage() {
   const [reservationForm, setReservationForm] = useState(false);
 
   useEffect(() => {
-    if (!showRoomInfo) return;
+    if (!showRoomInfo && !viewingReservation) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowRoomInfo(false);
+      if (e.key === 'Escape') {
+        setShowRoomInfo(false);
+        setViewingReservation(null);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showRoomInfo]);
+  }, [showRoomInfo, viewingReservation]);
 
   const handleRoomContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -191,10 +195,17 @@ export default function RoomDetailPage() {
           {room.reservations.map((rv) => (
             <div
               key={rv.id}
-              onClick={() => rv.status === 'active' && rv.user_id === user?.id && setEditingReservation(rv)}
+              onClick={() => {
+                if (rv.status !== 'active') return;
+                if (rv.user_id === user?.id) {
+                  setEditingReservation(rv);
+                } else {
+                  setViewingReservation(rv);
+                }
+              }}
               className={`bg-white rounded-lg border p-4 ${
                 rv.status === 'cancelled' ? 'border-red-200 bg-red-50' : 'border-gray-200'
-              } ${rv.status === 'active' && rv.user_id === user?.id ? 'cursor-pointer hover:border-blue-300 hover:border-2' : ''}`}
+              } ${rv.status === 'active' && rv.user_id === user?.id ? 'cursor-pointer hover:border-blue-300 hover:border-2' : ''} ${rv.status === 'active' && rv.user_id !== user?.id ? 'cursor-pointer hover:border-gray-300 hover:border-2' : ''}`}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -360,6 +371,40 @@ export default function RoomDetailPage() {
           </div>
         );
       })()}
+
+      {viewingReservation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setViewingReservation(null)}>
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setViewingReservation(null)}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-lg font-semibold text-gray-900 pr-8">{viewingReservation.title}</h3>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span>
+                  {format(new Date(viewingReservation.start_time), 'yyyy년 M월 d일 (EEE) HH:mm', { locale: ko })}
+                  {' ~ '}
+                  {format(new Date(viewingReservation.end_time), 'HH:mm')}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+                <span>{viewingReservation.user_name} ({viewingReservation.employee_id})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
