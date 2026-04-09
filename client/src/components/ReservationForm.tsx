@@ -10,22 +10,38 @@ interface Props {
   onClose: () => void;
 }
 
-const generateTimeSlots = () => {
+const ALL_TIME_SLOTS = (() => {
   const slots: string[] = [];
-  for (let h = 8; h < 22; h++) {
+  for (let h = 8; h < 18; h++) {
     slots.push(`${String(h).padStart(2, '0')}:00`);
     slots.push(`${String(h).padStart(2, '0')}:30`);
   }
+  slots.push('18:00');
   return slots;
-};
+})();
 
-const TIME_SLOTS = generateTimeSlots();
+const getAvailableTimeSlots = (selectedDate: string) => {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  if (selectedDate !== today) return ALL_TIME_SLOTS;
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  // 다음 30분 단위로 올림 (예: 12:31 → 13:00)
+  const nextSlotMinutes = Math.ceil(currentMinutes / 30) * 30;
+
+  return ALL_TIME_SLOTS.filter((slot) => {
+    const [h, m] = slot.split(':').map(Number);
+    return h * 60 + m >= nextSlotMinutes;
+  });
+};
 
 export default function ReservationForm({ roomId: _roomId, roomName, reservation, onSubmit, onClose }: Props) {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('09:30');
+
+  const availableSlots = getAvailableTimeSlots(date);
 
   useEffect(() => {
     if (reservation) {
@@ -37,6 +53,18 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
       setEndTime(format(end, 'HH:mm'));
     }
   }, [reservation]);
+
+  // 날짜 변경 시 선택된 시간이 가용 슬롯에 없으면 첫 번째 슬롯으로 리셋
+  useEffect(() => {
+    if (availableSlots.length === 0) return;
+    if (!availableSlots.includes(startTime)) {
+      setStartTime(availableSlots[0]);
+      setEndTime(availableSlots.length > 1 ? availableSlots[1] : availableSlots[0]);
+    } else if (!availableSlots.includes(endTime) || endTime <= startTime) {
+      const startIdx = availableSlots.indexOf(startTime);
+      setEndTime(availableSlots[Math.min(startIdx + 1, availableSlots.length - 1)]);
+    }
+  }, [date, availableSlots, startTime, endTime]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +103,8 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              onFocus={(e) => e.target.showPicker()}
+              onKeyDown={(e) => e.preventDefault()}
               required
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -87,7 +117,7 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
                 onChange={(e) => setStartTime(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {TIME_SLOTS.map((t) => (
+                {availableSlots.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
@@ -99,7 +129,7 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
                 onChange={(e) => setEndTime(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {TIME_SLOTS.map((t) => (
+                {availableSlots.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>

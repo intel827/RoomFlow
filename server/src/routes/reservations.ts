@@ -8,7 +8,11 @@ const router = Router();
 const timeSchema = z.string().datetime().refine((val) => {
   const minutes = new Date(val).getMinutes();
   return minutes === 0 || minutes === 30;
-}, '시간은 30분 단위로만 설정할 수 있습니다.');
+}, '시간은 30분 단위로만 설정할 수 있습니다.').refine((val) => {
+  const hours = new Date(val).getHours();
+  const minutes = new Date(val).getMinutes();
+  return hours >= 8 && (hours < 18 || (hours === 18 && minutes === 0));
+}, '예약 가능 시간은 08:00~18:00입니다.');
 
 const reservationSchema = z.object({
   room_id: z.number().int().positive(),
