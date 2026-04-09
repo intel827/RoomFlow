@@ -18,6 +18,7 @@ export default function LoginPage() {
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || '로그인에 실패했습니다.');
+      setEmployeeId('');
     } finally {
       setLoading(false);
     }
