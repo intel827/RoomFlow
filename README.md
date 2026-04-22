@@ -151,6 +151,53 @@ JOIN users u ON r.user_id = u.id;
    ```
 3. **Node.js 버전이 너무 낮은 경우** — `node -v`로 확인, v18 이상 필요
 
+### Node.js 버전을 바꾼 뒤로 서버가 안 켜져요
+
+**증상**: `nvm use`로 Node 버전을 바꾸거나 새 버전을 설치한 뒤 서버 실행 시 아래와 비슷한 오류가 나옵니다.
+
+```
+Error: The module '.../better_sqlite3.node' was compiled against a different Node.js version
+using NODE_MODULE_VERSION XXX. This version of Node.js requires NODE_MODULE_VERSION YYY.
+```
+
+**원인**: `better-sqlite3`는 네이티브 애드온(C++로 작성된 모듈)이라 설치 시점의 Node.js ABI 버전에 맞춰 컴파일됩니다. Node.js 주 버전이 바뀌면 ABI 번호도 바뀌어서 기존 바이너리가 새 Node와 호환되지 않습니다 (예: Node 20 → 115, Node 22 → 127, Node 24 → 137).
+
+**해결**: 네이티브 모듈만 현재 Node 버전으로 재컴파일합니다.
+
+```bash
+cd server
+npm rebuild better-sqlite3
+```
+
+그래도 해결되지 않으면 `node_modules`를 통째로 재설치하세요.
+
+```bash
+cd server
+rm -rf node_modules package-lock.json
+npm install
+```
+
+> 프로젝트 루트에 `.nvmrc` 파일로 Node 버전을 고정해두면, 본인이나 팀원이 다른 환경에서 작업할 때 `nvm use` 한 번으로 자동 전환됩니다.
+> ```bash
+> echo "24" > .nvmrc
+> ```
+
+### "로그인 방식이 설정되지 않았습니다"라고 나와요
+
+**증상**: 로그인 화면에 `로그인 방식이 설정되지 않았습니다`라는 문구만 보이고 사번 입력 폼이나 하이웍스 로그인 버튼이 아예 뜨지 않습니다.
+
+**원인**: `server/.env` 파일이 없어서 사번 로그인과 하이웍스 SSO가 둘 다 비활성 상태입니다. 서버는 `ENABLE_EMPLOYEE_LOGIN=true`일 때만 사번 로그인을, `HIWORKS_CLIENT_ID`가 있을 때만 하이웍스 SSO를 노출합니다. 둘 다 꺼져 있으면 프론트엔드가 위 메시지를 표시합니다.
+
+**해결**: `server/.env.example`을 `.env`로 복사하면 기본값이 주입됩니다.
+
+```bash
+cp server/.env.example server/.env
+```
+
+복사 후 서버를 재시작하세요 (`Ctrl + C` → `npm run dev`). 서버 기동 로그에 `injected env (5) from .env`가 보이면 환경변수가 정상 주입된 것입니다.
+
+> 하이웍스 SSO까지 사용하려면 `server/.env`의 `HIWORKS_CLIENT_ID`와 `HIWORKS_CLIENT_SECRET`에 발급받은 값을 채운 뒤 서버를 재시작하세요. 비워두면 사번 로그인만 활성화됩니다.
+
 ### 로그인이 안 돼요
 
 - 시드 데이터를 넣었는지 확인: `npm run db:seed`
