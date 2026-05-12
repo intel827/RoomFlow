@@ -55,6 +55,7 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
     ? [format(new Date(reservation.start_time), 'HH:mm'), format(new Date(reservation.end_time), 'HH:mm')]
     : undefined;
   const availableSlots = getAvailableTimeSlots(date, preserveSlots);
+  const hasNoSlots = availableSlots.length === 0;
 
   useEffect(() => {
     if (reservation) {
@@ -83,6 +84,7 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (hasNoSlots) return;
     const start = new Date(`${date}T${startTime}:00`);
     const end = new Date(`${date}T${endTime}:00`);
 
@@ -139,36 +141,45 @@ export default function ReservationForm({ roomId: _roomId, roomName, reservation
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">시작 시간</label>
-              <select
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {availableSlots.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+          {hasNoSlots ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              오늘은 더 이상 예약 가능한 시간이 없습니다. 다른 날짜를 선택해 주세요.
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">종료 시간</label>
-              <select
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {availableSlots.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">시작 시간</label>
+                <select
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {availableSlots.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">종료 시간</label>
+                <select
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {availableSlots.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
           <div className="flex justify-end pt-2">
             <button
               type="submit"
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              disabled={hasNoSlots}
+              className={`px-4 py-2 text-sm rounded-md text-white ${
+                hasNoSlots ? 'bg-blue-600 opacity-50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
               {reservation ? '수정' : '예약'}
             </button>
